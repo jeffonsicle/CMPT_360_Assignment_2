@@ -42,21 +42,6 @@ int main(int argc, char *argv[])
     }
 
     //this code will open the file, print the contents of the file, and close the file
-    /*sprintf(path, "/workspaces/CMPT_360_Assignment_2/A2/Workload_Samples/%s", &fileName);
-    FILE *fp = fopen(path, "r");
-    if (!fp) 
-    {
-        fprintf(stderr, "Error: Could not open file %s\n", path);
-        return 1;
-    }
-    char line[256];
-
-    while (fgets(line, sizeof(line), fp) != NULL) 
-    {
-        printf("%s", line);
-    }
-    fclose(fp);*/
-
     if(FileReader(fileName, path) == 1)
     {
         return 1;
@@ -133,10 +118,15 @@ int FileCheck(char *argthree, char *argtwo, char *scheduleType, char *fileName)
             return 1;
         }
     }
+    else
+    {
+        return 1;
+    }
 }
 
 int FileReader(char *fileName, char *path)
 {
+    //this code will open the file, print the contents of the file, and close the file
     sprintf(path, "/workspaces/CMPT_360_Assignment_2/A2/Workload_Samples/%s", fileName);
     FILE *fp = fopen(path, "r");
     if (!fp) 
@@ -150,6 +140,8 @@ int FileReader(char *fileName, char *path)
     {
         printf("%s", line);
     }
+
     fclose(fp);
+
     return 0;
 }
