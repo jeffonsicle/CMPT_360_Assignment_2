@@ -1,5 +1,7 @@
+#include "sched.h"
 #include <stdio.h>
 #include <string.h>
+#define MAX_PROCESSES 100
 
 char *PolicyCheck(char *argOne);
 
@@ -7,7 +9,9 @@ char *RoundRobinIntegerCheck(char *argTwo);
 
 int FileCheck(char *argthree, char *argtwo, char *scheduleType, char *fileName);
 
-int FileReader(char *fileName, char *path);
+int FileReader(char *fileName, char *path, Process processes[], int *count);
+
+void runFCFS(Process p[], int n);
 
 int N;
 
@@ -42,10 +46,18 @@ int main(int argc, char *argv[])
     }
 
     //this code will open the file, print the contents of the file, and close the file
-    if(FileReader(fileName, path) == 1)
+    Process processes[MAX_PROCESSES];
+    int processCount = 0;
+
+    if(FileReader(fileName, path, processes, &processCount) == 1)
     {
         return 1;
     }
+
+    printf("Read %d processes\n", processCount);
+
+    //check if the process is FCFS, if it is go to the function runFCFS
+    runFCFS(processes, processCount);
 
     return 0;
 }
@@ -124,7 +136,7 @@ int FileCheck(char *argthree, char *argtwo, char *scheduleType, char *fileName)
     }
 }
 
-int FileReader(char *fileName, char *path)
+int FileReader(char *fileName, char *path, Process processes[], int *count)
 {
     //this code will open the file, print the contents of the file, and close the file
     sprintf(path, "/workspaces/CMPT_360_Assignment_2/A2/Workload_Samples/%s", fileName);
@@ -135,13 +147,88 @@ int FileReader(char *fileName, char *path)
         return 1;
     }
     char line[256];
+    *count = 0;
 
-    while (fgets(line, sizeof(line), fp) != NULL) 
-    {
-        printf("%s", line);
+    while (fgets(line, sizeof(line), fp)) {
+
+        // skip comments
+        if (line[0] == '#')
+            continue;
+
+        // parse: PID ARRIVAL CPU_TIME
+        if (sscanf(line, "%d %d %d",
+                   &processes[*count].pid,
+                   &processes[*count].arrival,
+                   &processes[*count].burst) == 3)
+        {
+            (*count)++;
+        }
     }
 
     fclose(fp);
 
     return 0;
+}
+
+void runFCFS(Process p[], int n)
+{
+    //local variables to track time, context switches and TAT and RESP time
+    int time = 0;
+    int ctx_switches = 0;
+    double totalTAT = 0, totalRESP = 0;
+
+    //this will print the total time it will complete to run each process
+    printf("time: ");
+    int totalBurst = 0;
+    for(int i = 0; i < n; i++)
+    {
+        totalBurst += p[i].burst;
+    }
+    for(int t = 0; t < totalBurst; t++)
+    {
+        printf("%d ",t);
+    }
+    printf("\n");
+
+    //this will run the simulation
+    printf("run: ");
+    for(int i = 0; i < n; i++)
+    {
+        if(time < p[i].arrival)
+        {
+            time = p[i].arrival;
+        }
+        p[i].firstRun = time;
+        p[i].RESP = p[i].firstRun - p[i].arrival;
+        
+        if(i>0)
+        {
+            ctx_switches++;
+        }
+
+        printf(" ");
+        for (int t = 0; t < p[i].burst; t++)
+        {
+            printf("%d ", p[i].pid);
+            time++;
+        }
+
+        p[i].completion = time;
+        p[i].TAT = p[i].completion - p[i].arrival;
+
+        totalTAT += p[i].TAT;
+        totalRESP += p[i].RESP;
+    }
+
+    printf("\n");
+    
+    //per process outputs
+    for (int i = 0; i < n; i++)
+    {
+        printf("P%d: firstrun=%d completion=%d TAT=%d RESP=%d\n",p[i].pid,p[i].firstRun,p[i].completion,p[i].TAT,p[i].RESP);
+    }
+
+    //system stats
+    printf("System: ctx_switches=%d, avgTAT=%.3f, avgRESP=%.3f\n",ctx_switches,totalTAT / n,totalRESP / n);
+
 }
