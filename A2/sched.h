@@ -9,9 +9,11 @@ typedef struct {
     int completion;
     int TAT;
     int RESP;
+    int remainingTime;
 } Process;
 
 int FileReader(char *fileName, char *path, Process processes[], int *count);
 void runFCFS(Process p[], int n);
+void runRR(Process p[], int n);
 
 #endif

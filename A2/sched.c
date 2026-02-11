@@ -15,6 +15,8 @@ int FileReader(char *fileName, char *path, Process processes[], int *count);
 
 void runFCFS(Process p[], int n);
 
+void runRR(Process p[], int n);
+
 int N;
 
 int main(int argc, char *argv[]) 
@@ -59,10 +61,19 @@ int main(int argc, char *argv[])
     printf("Read %d processes\n", processCount);
 
     //check if the process is FCFS, if it is go to the function runFCFS
-    runFCFS(processes, processCount);
+    if(strcmp(scheduleType, "First come first serve")==0)
+    {
+        runFCFS(processes, processCount);
+    }
+    else if(strcmp(scheduleType, "Round Robin")==0)
+    {
+        runRR(processes, processCount);
+    }
 
     return 0;
 }
+
+
 
 char *PolicyCheck(char *argOne)
 {
@@ -216,7 +227,7 @@ void runFCFS(Process p[], int n)
             printf("- ");
             timeTracker++;
         }
-        
+
         if(time < p[i].arrival)
         {
             time = p[i].arrival;
@@ -254,5 +265,56 @@ void runFCFS(Process p[], int n)
 
     //system stats
     printf("System: ctx_switches=%d, avgTAT=%.3f, avgRESP=%.3f\n",ctx_switches,totalTAT / n,totalRESP / n);
+
+}
+
+void runRR(Process p[], int n)
+{
+    //local variables to track time, context switches and TAT and RESP time
+    int time = 0;
+    int ctx_switches = 0;
+    double totalTAT = 0, totalRESP = 0;
+    int timeTracker = 0;
+
+    //this will print the total time it will complete to run each process
+    printf("time: ");
+    int totalBurstArrival = 0;
+    int totalBurst = 0;
+    for(int i = 0; i < n; i++)
+    {
+        totalBurst += p[i].burst;
+        totalBurstArrival += p[i].arrival;
+        if(totalBurstArrival > totalBurst)
+        {
+            totalBurst = totalBurstArrival;
+        }
+    }
+    for(int t = 0; t < totalBurst; t++)
+    {
+        printf("%d ",t);
+    }
+    printf("\n");
+
+    printf("run: ");
+
+    for(int i = 0; i < n; i++)
+    {
+        p[i].remainingTime = p[i].burst
+        p[i].firstRun = time
+        p[i].RESP = time - p[i].arrival
+
+        for(int a = 0; a < N; a++)
+        {
+            p[i].remainingTime--;
+            time++;
+            if(p[i].remainingTime == 0)
+            {
+                break;
+            }
+        }
+    }
+
+
+    printf("%d", N);
 
 }
