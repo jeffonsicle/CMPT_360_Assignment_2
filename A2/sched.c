@@ -1,7 +1,9 @@
 #include "sched.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #define MAX_PROCESSES 100
+#define LINE_SIZE 256
 
 char *PolicyCheck(char *argOne);
 
@@ -146,26 +148,33 @@ int FileReader(char *fileName, char *path, Process processes[], int *count)
         fprintf(stderr, "Error: Could not open file %s\n", path);
         return 1;
     }
-    char line[256];
+    char *line = malloc(LINE_SIZE);
+    if (!line) 
+    {
+        perror("malloc");
+        return;
+    }
     *count = 0;
 
-    while (fgets(line, sizeof(line), fp)) {
+    while (fgets(line, LINE_SIZE, fp)) {
 
         // skip comments
         if (line[0] == '#')
             continue;
 
-        // parse: PID ARRIVAL CPU_TIME
+        // parse: PID, ARRIVAL, CPU_TIME
         if (sscanf(line, "%d %d %d",
                    &processes[*count].pid,
                    &processes[*count].arrival,
-                   &processes[*count].burst) == 3)
+                   &processes[*count].burst))
         {
             (*count)++;
         }
     }
 
     fclose(fp);
+
+    free(line);
 
     return 0;
 }
@@ -176,13 +185,20 @@ void runFCFS(Process p[], int n)
     int time = 0;
     int ctx_switches = 0;
     double totalTAT = 0, totalRESP = 0;
+    int timeTracker = 0;
 
     //this will print the total time it will complete to run each process
     printf("time: ");
+    int totalBurstArrival = 0;
     int totalBurst = 0;
     for(int i = 0; i < n; i++)
     {
         totalBurst += p[i].burst;
+        totalBurstArrival += p[i].arrival;
+        if(totalBurstArrival > totalBurst)
+        {
+            totalBurst = totalBurstArrival;
+        }
     }
     for(int t = 0; t < totalBurst; t++)
     {
@@ -194,6 +210,13 @@ void runFCFS(Process p[], int n)
     printf("run: ");
     for(int i = 0; i < n; i++)
     {
+        //this will create idle time
+        while(timeTracker < p[i].arrival)
+        {
+            printf("- ");
+            timeTracker++;
+        }
+        
         if(time < p[i].arrival)
         {
             time = p[i].arrival;
@@ -211,6 +234,7 @@ void runFCFS(Process p[], int n)
         {
             printf("%d ", p[i].pid);
             time++;
+            timeTracker++;
         }
 
         p[i].completion = time;
