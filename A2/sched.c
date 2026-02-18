@@ -335,9 +335,6 @@ void runRR(Process p[], int n)
     int run_at_time[MAX_TIMELINE];
     int timeline_len = 0;
 
-    int ctx_switches = 0;
-    int prev_nonidle_pid = -1;
-
     int current_idx = -1;
     int quantum_remaining = 0;
 
@@ -363,11 +360,6 @@ void runRR(Process p[], int n)
                     p[current_idx].firstRun = time;
                     p[current_idx].RESP = time - p[current_idx].arrival;
                 }
-
-                int this_pid = p[current_idx].pid;
-                if (prev_nonidle_pid != -1 && prev_nonidle_pid != this_pid)
-                    ctx_switches++;
-                prev_nonidle_pid = this_pid;
             }
         }
 
@@ -385,7 +377,6 @@ void runRR(Process p[], int n)
                 p[current_idx].TAT = time - p[current_idx].arrival;
                 completed++;
                 current_idx = -1;
-                prev_nonidle_pid = -1;
             }
             else if (quantum_remaining == 0) {
                 /* quantum expired → re-enqueue */
@@ -399,7 +390,19 @@ void runRR(Process p[], int n)
             run_at_time[timeline_len] = -1;
             timeline_len++;
             time++;
-            prev_nonidle_pid = -1;
+        }
+    }
+
+    /* ── Calculate ctx_switches by scanning the timeline ── */
+    int ctx_switches = 0;
+    int prev = -1;
+    for (int t = 0; t < timeline_len; t++) {
+        int cur = run_at_time[t];
+        if (cur >= 0 && prev >= 0 && cur != prev) {
+            ctx_switches++;
+        }
+        if (cur >= 0) {
+            prev = cur;
         }
     }
 
