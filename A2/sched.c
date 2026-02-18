@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #define MAX_PROCESSES 100
 #define LINE_SIZE 256
 
@@ -72,6 +73,50 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+
+
+/*void initQueue(Queue* q) {
+    q->front = q->rear = NULL;
+}
+
+int isEmpty(Queue *q)
+{
+    return q->front == NULL;
+}
+
+void enqueue(Queue* q, int value) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->data = value;
+    newNode->next = NULL;
+
+    if (q->rear == NULL) {
+        q->front = q->rear = newNode;
+        return;
+    }
+
+    q->rear->next = newNode;
+    q->rear = newNode;
+}
+
+int dequeue(Queue* q) {
+    if (q->front == NULL) {
+        printf("Queue is empty\n");
+        return -1;
+    }
+
+    Node* temp = q->front;
+    int value = temp->data;
+
+    q->front = q->front->next;
+
+    if (q->front == NULL)
+        q->rear = NULL;
+
+    free(temp);
+    return value;
+}*/
+
 
 
 
@@ -270,51 +315,117 @@ void runFCFS(Process p[], int n)
 
 void runRR(Process p[], int n)
 {
-    //local variables to track time, context switches and TAT and RESP time
-    int time = 0;
-    int ctx_switches = 0;
-    double totalTAT = 0, totalRESP = 0;
-    int timeTracker = 0;
+    Queue q;
+    initQueue(&q);
 
-    //this will print the total time it will complete to run each process
-    printf("time: ");
-    int totalBurstArrival = 0;
-    int totalBurst = 0;
-    for(int i = 0; i < n; i++)
-    {
-        totalBurst += p[i].burst;
-        totalBurstArrival += p[i].arrival;
-        if(totalBurstArrival > totalBurst)
-        {
-            totalBurst = totalBurstArrival;
+    bool arrived_or_queued[MAX_PROCESSES] = {false};
+
+    int time = 0;
+    int completed = 0;
+
+    for (int i = 0; i < n; i++) {
+        p[i].remainingTime = p[i].burst;
+        p[i].firstRun      = -1;
+        p[i].completion    = 0;
+        p[i].TAT           = 0;
+        p[i].RESP          = 0;
+    }
+
+    #define MAX_TIMELINE 10000
+    int run_at_time[MAX_TIMELINE];
+    int timeline_len = 0;
+
+    int ctx_switches = 0;
+    int prev_nonidle_pid = -1;
+
+    int current_idx = -1;
+    int quantum_remaining = 0;
+
+    while (completed < n) {
+
+        /* 1. Add any newly arrived processes */
+        for (int i = 0; i < n; i++) {
+            if (p[i].arrival <= time &&
+                p[i].remainingTime > 0 &&
+                !arrived_or_queued[i]) {
+                enqueue(&q, i);
+                arrived_or_queued[i] = true;
+            }
+        }
+
+        /* 2. If CPU is free, pick next process */
+        if (current_idx == -1) {
+            if (!isEmpty(&q)) {
+                current_idx = dequeue(&q);
+                quantum_remaining = N;
+
+                if (p[current_idx].firstRun == -1) {
+                    p[current_idx].firstRun = time;
+                    p[current_idx].RESP = time - p[current_idx].arrival;
+                }
+
+                int this_pid = p[current_idx].pid;
+                if (prev_nonidle_pid != -1 && prev_nonidle_pid != this_pid)
+                    ctx_switches++;
+                prev_nonidle_pid = this_pid;
+            }
+        }
+
+        /* 3. Execute ONE time unit */
+        if (current_idx != -1) {
+            run_at_time[timeline_len] = p[current_idx].pid;
+            p[current_idx].remainingTime--;
+            quantum_remaining--;
+            timeline_len++;
+            time++;
+
+            /* Check after this tick */
+            if (p[current_idx].remainingTime == 0) {
+                p[current_idx].completion = time;
+                p[current_idx].TAT = time - p[current_idx].arrival;
+                completed++;
+                current_idx = -1;
+                prev_nonidle_pid = -1;
+            }
+            else if (quantum_remaining == 0) {
+                /* quantum expired → re-enqueue */
+                enqueue(&q, current_idx);
+                arrived_or_queued[current_idx] = true;
+                current_idx = -1;
+            }
+        }
+        else {
+            /* idle */
+            run_at_time[timeline_len] = -1;
+            timeline_len++;
+            time++;
+            prev_nonidle_pid = -1;
         }
     }
-    for(int t = 0; t < totalBurst; t++)
-    {
-        printf("%d ",t);
+
+    /* ── Exact output format required by the assignment ── */
+    printf("time: ");
+    for (int t = 0; t < timeline_len; t++)
+        printf("%d ", t);
+    printf("\nrun : ");
+    for (int t = 0; t < timeline_len; t++) {
+        if (run_at_time[t] == -1)
+            printf("- ");
+        else
+            printf("%d ", run_at_time[t]);
     }
     printf("\n");
 
-    printf("run: ");
-
-    for(int i = 0; i < n; i++)
-    {
-        p[i].remainingTime = p[i].burst
-        p[i].firstRun = time
-        p[i].RESP = time - p[i].arrival
-
-        for(int a = 0; a < N; a++)
-        {
-            p[i].remainingTime--;
-            time++;
-            if(p[i].remainingTime == 0)
-            {
-                break;
-            }
-        }
+    for (int i = 0; i < n; i++) {
+        printf("P%d: first run=%d completion=%d TAT=%d RESP=%d\n",
+               p[i].pid, p[i].firstRun, p[i].completion, p[i].TAT, p[i].RESP);
     }
 
-
-    printf("%d", N);
-
+    double avg_tat = 0.0, avg_resp = 0.0;
+    for (int i = 0; i < n; i++) {
+        avg_tat += p[i].TAT;
+        avg_resp += p[i].RESP;
+    }
+    printf("System: ctx_switches=%d, avgTAT=%.3f, avgRESP=%.3f\n",
+           ctx_switches, avg_tat / n, avg_resp / n);
 }
