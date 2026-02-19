@@ -15,21 +15,11 @@ typedef struct {
     int remainingTime;
 } Process;
 
-/*typedef struct Node {
-    int data;
-    struct Node* next;
-} Node;
-
-typedef struct {
-    Node* front;
-    Node* rear;
-} Queue;*/
-
 typedef struct {
     int data[MAX_PROCESSES];
     int front;
     int rear;
-    int size;           // optional: track current number of elements
+    int size;         
 } Queue;
 
 void initQueue(Queue *q) {
@@ -39,19 +29,16 @@ void initQueue(Queue *q) {
 }
 
 bool isEmpty(Queue *q) {
-    return q->size == 0;
-    // or: return q->front == q->rear;  (if you prefer, but then need different isFull)
-}
+    return q->size == 0;}
 
 bool isFull(Queue *q) {
     return q->size == MAX_PROCESSES;
-    // or classic: (q->rear + 1) % MAX_PROCESSES == q->front;
 }
 
 void enqueue(Queue *q, int x) {
     if (isFull(q)) {
         fprintf(stderr, "Queue overflow!\n");
-        exit(1);           // or handle gracefully
+        exit(1);          
     }
     q->data[q->rear] = x;
     q->rear = (q->rear + 1) % MAX_PROCESSES;

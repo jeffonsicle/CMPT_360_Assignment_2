@@ -340,7 +340,7 @@ void runRR(Process p[], int n)
 
     while (completed < n) {
 
-        /* 1. Add any newly arrived processes */
+        //Add any newly arrived processes 
         for (int i = 0; i < n; i++) {
             if (p[i].arrival <= time &&
                 p[i].remainingTime > 0 &&
@@ -350,7 +350,7 @@ void runRR(Process p[], int n)
             }
         }
 
-        /* 2. If CPU is free, pick next process */
+        //If CPU is free, pick next process 
         if (current_idx == -1) {
             if (!isEmpty(&q)) {
                 current_idx = dequeue(&q);
@@ -363,7 +363,7 @@ void runRR(Process p[], int n)
             }
         }
 
-        /* 3. Execute ONE time unit */
+        
         if (current_idx != -1) {
             run_at_time[timeline_len] = p[current_idx].pid;
             p[current_idx].remainingTime--;
@@ -371,7 +371,6 @@ void runRR(Process p[], int n)
             timeline_len++;
             time++;
 
-            /* Check after this tick */
             if (p[current_idx].remainingTime == 0) {
                 p[current_idx].completion = time;
                 p[current_idx].TAT = time - p[current_idx].arrival;
@@ -379,21 +378,21 @@ void runRR(Process p[], int n)
                 current_idx = -1;
             }
             else if (quantum_remaining == 0) {
-                /* quantum expired → re-enqueue */
+            
                 enqueue(&q, current_idx);
                 arrived_or_queued[current_idx] = true;
                 current_idx = -1;
             }
         }
         else {
-            /* idle */
+    
             run_at_time[timeline_len] = -1;
             timeline_len++;
             time++;
         }
     }
 
-    /* ── Calculate ctx_switches by scanning the timeline ── */
+    //Calculate ctx_switches
     int ctx_switches = 0;
     int prev = -1;
     for (int t = 0; t < timeline_len; t++) {
@@ -406,7 +405,6 @@ void runRR(Process p[], int n)
         }
     }
 
-    /* ── Exact output format required by the assignment ── */
     printf("time: ");
     for (int t = 0; t < timeline_len; t++)
         printf("%d ", t);
