@@ -74,52 +74,6 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
-
-/*void initQueue(Queue* q) {
-    q->front = q->rear = NULL;
-}
-
-int isEmpty(Queue *q)
-{
-    return q->front == NULL;
-}
-
-void enqueue(Queue* q, int value) {
-    Node* newNode = (Node*)malloc(sizeof(Node));
-    newNode->data = value;
-    newNode->next = NULL;
-
-    if (q->rear == NULL) {
-        q->front = q->rear = newNode;
-        return;
-    }
-
-    q->rear->next = newNode;
-    q->rear = newNode;
-}
-
-int dequeue(Queue* q) {
-    if (q->front == NULL) {
-        printf("Queue is empty\n");
-        return -1;
-    }
-
-    Node* temp = q->front;
-    int value = temp->data;
-
-    q->front = q->front->next;
-
-    if (q->front == NULL)
-        q->rear = NULL;
-
-    free(temp);
-    return value;
-}*/
-
-
-
-
 char *PolicyCheck(char *argOne)
 {
     //the checks below are to check if the first argument is asking to use Round Robin or First come first serve
@@ -197,7 +151,7 @@ int FileCheck(char *argthree, char *argtwo, char *scheduleType, char *fileName)
 int FileReader(char *fileName, char *path, Process processes[], int *count)
 {
     //this code will open the file, print the contents of the file, and close the file
-    sprintf(path, "/workspaces/CMPT_360_Assignment_2/A2/Workload_Samples/%s", fileName);
+    sprintf(path, "/home/students/monizj4/CMPT_360_Assignment_2/A2/Workload_Samples/%s", fileName);
     FILE *fp = fopen(path, "r");
     if (!fp) 
     {
