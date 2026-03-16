@@ -56,7 +56,7 @@ int dequeue(Queue *q) {
     return val;
 }
 
-int FileReader(char *fileName, char *path, Process processes[], int *count);
+int FileReader(const char *fileName, char *path, Process processes[], int *count);
 void runFCFS(Process p[], int n);
 void runRR(Process p[], int n);
 

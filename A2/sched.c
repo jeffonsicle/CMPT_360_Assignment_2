@@ -1,6 +1,7 @@
 #include "sched.h"
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #define MAX_PROCESSES 100
@@ -10,9 +11,9 @@ char *PolicyCheck(char *argOne);
 
 char *RoundRobinIntegerCheck(char *argTwo);
 
-int FileCheck(char *argthree, char *argtwo, char *scheduleType, char *fileName);
+int FileCheck(char *argthree, char *argtwo, char *scheduleType, const char **fileName);
 
-int FileReader(char *fileName, char *path, Process processes[], int *count);
+int FileReader(const char *fileName, char *path, Process processes[], int *count);
 
 void runFCFS(Process p[], int n);
 
@@ -24,7 +25,7 @@ int main(int argc, char *argv[])
 {
     char *scheduleType;
     char *quantumCheck;
-    char fileName[256];
+    const char *fileName;
     char path[500];
 
     //the checks below are to check if the first argument is asking to use Round Robin or First come first serve
@@ -45,7 +46,7 @@ int main(int argc, char *argv[])
     }
 
     //this code will check the schedule type and get the file name from the user based on the scheduler they are using
-    if(FileCheck(argv[3], argv[2], scheduleType, fileName) == 1)
+    if(FileCheck(argv[3], argv[2], scheduleType, &fileName) == 1)
     {
         return 1;
     }
@@ -115,13 +116,13 @@ char *RoundRobinIntegerCheck(char *argTwo)
     
 }
 
-int FileCheck(char *argthree, char *argtwo, char *scheduleType, char *fileName)
+int FileCheck(char *argthree, char *argtwo, char *scheduleType, const char **fileName)
 {
     //this code will check the schedule type and get the file name from the user based on the scheduler they are using
     if(strcmp(scheduleType, "First come first serve")==0)
     {
-        if (sscanf(argtwo, "--in=%s", fileName) == 1)
-        {
+        if (strncmp(argtwo, "--in=", 5) == 0) {
+            *fileName = argtwo + 5;
             return 0;
         }
         else
@@ -132,8 +133,8 @@ int FileCheck(char *argthree, char *argtwo, char *scheduleType, char *fileName)
     }
     else if(strcmp(scheduleType, "Round Robin")==0)
     {
-        if (sscanf(argthree, "--in=%s", fileName) == 1)
-        {
+        if (strncmp(argthree, "--in=", 5) == 0) {
+            *fileName = argthree + 5;
             return 0;
         }
         else
@@ -148,14 +149,12 @@ int FileCheck(char *argthree, char *argtwo, char *scheduleType, char *fileName)
     }
 }
 
-int FileReader(char *fileName, char *path, Process processes[], int *count)
+int FileReader(const char *fileName, char *path, Process processes[], int *count)
 {
     //this code will open the file, print the contents of the file, and close the file
-    sprintf(path, "/home/students/monizj4/CMPT_360_Assignment_2/A2/Workload_Samples/%s", fileName);
-    FILE *fp = fopen(path, "r");
-    if (!fp) 
-    {
-        fprintf(stderr, "Error: Could not open file %s\n", path);
+    FILE *fp = fopen(fileName, "r");
+    if (!fp) {
+        fprintf(stderr, "Error: cannot open trace file '%s': %s\n", fileName, strerror(errno));
         return 1;
     }
     char *line = malloc(LINE_SIZE);
